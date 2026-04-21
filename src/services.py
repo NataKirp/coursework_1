@@ -4,16 +4,38 @@ from datetime import datetime
 
 from pandas import DataFrame
 
+from src.logging_config import setup_logging
 from src.utils import read_excel_file
+
+services_logger = setup_logging('services')
 
 
 def df_to_dict(df: DataFrame) -> list[dict]:
+    """Функция для преобразования датафрейма в список словарей."""
+    services_logger.info(f'Начало работы функции "df_to_dict".')
+    if df is None or df.empty:
+        services_logger.warning('В датафрейме нет данных.')
+        return []
+
     data_list = df.to_dict(orient='records')
+    services_logger.info(f'Завершение работы функции "df_to_dict".')
+
     return data_list
 
 
 def cashback_analysis(data: list[dict], year: int, month: int):
     """Функция для анализа выгодности категорий повышенного кэшбэка."""
+    services_logger.info(f'Начало работы функции "cashback_analysis".')
+    if not isinstance(data, list) or not all(isinstance(item, dict) for item in data):
+        services_logger.error("Ошибка типа данных: data должна быть списком словарей.")
+        raise TypeError("Неправильный формат исходных данных. Ожидается список словарей")
+    if not isinstance(year, int) or not isinstance(month, int):
+        services_logger.error(f"Неверные параметры периода: year={type(year)}, month={type(month)}")
+        raise ValueError("Год или месяц для расчета отсутствует или имеет неверный тип")
+    if not data:
+        services_logger.warning("Список транзакций пуст")
+        return []
+
     filtered_by_month_year = [
         item for item in data
         if (d := datetime.strptime(item['Дата операции'], '%d.%m.%Y %H:%M:%S')).month == month
@@ -29,11 +51,13 @@ def cashback_analysis(data: list[dict], year: int, month: int):
     sorted_by_category = {k: round(v) for k, v in sorted_by_category.items() if round(v) != 0}
 
     json_output = json.dumps(sorted_by_category, indent=4, ensure_ascii=False)
+    services_logger.info(f'Завершение работы функции "cashback_analysis".')
 
     return json_output
 
-# if __name__ == '__main__':
-#     df = read_excel_file('../data/operations.xlsx')
-#     df = df.fillna(0)
-#     data = df_to_dict(df)
-#     print(cashback_analysis(data, 2018, 3))
+
+if __name__ == '__main__':
+    df = read_excel_file('../data/operations.xlsx')
+    df = df.fillna(0)
+    data = df_to_dict(df)
+    print(cashback_analysis(data, 2018, 3))
