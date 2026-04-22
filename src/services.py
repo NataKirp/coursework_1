@@ -50,14 +50,18 @@ def cashback_analysis(data: list[dict], year: int, month: int):
     # округляем значения кэшбэка и исключаем значения, где кэшбэк 0
     sorted_by_category = {k: round(v) for k, v in sorted_by_category.items() if round(v) != 0}
 
+    if not sorted_by_category:
+        services_logger.info('За указанный период кэшбэк не найден.')
+        return json.dumps({'message': 'За этот период кэшбэка нет'}, ensure_ascii=False)
+
     json_output = json.dumps(sorted_by_category, indent=4, ensure_ascii=False)
     services_logger.info(f'Завершение работы функции "cashback_analysis".')
 
     return json_output
 
 
-if __name__ == '__main__':
-    df = read_excel_file('../data/operations.xlsx')
-    df = df.fillna(0)
-    data = df_to_dict(df)
-    print(cashback_analysis(data, 2018, 3))
+# if __name__ == '__main__':
+#     df = read_excel_file('../data/operations.xlsx')
+#     df = df.fillna(0)
+#     data = df_to_dict(df)
+#     print(cashback_analysis(data, 2018, 3))

@@ -7,6 +7,7 @@ from typing import Optional, List, Any, Callable
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 
+import config
 from src.logging_config import setup_logging
 from src.utils import read_excel_file
 
@@ -75,7 +76,7 @@ def spending_by_category(transactions: pd.DataFrame,
 
     if filtered_by_category is None or filtered_by_category.empty:
         reports_logger.info('Нет данных за указанный период')
-        return []
+        return json.dumps({category: 'За этот период нет трат по категории'}, ensure_ascii=False)
 
     grouped = filtered_by_category.groupby('Описание')['Сумма операции'].sum().reset_index()
     grouped = grouped.sort_values(by='Сумма операции', ascending=True)  # True, т.к. суммы отрицательные, по убыванию
@@ -87,8 +88,8 @@ def spending_by_category(transactions: pd.DataFrame,
     return json_output
 
 
-if __name__ == '__main__':
-    df = read_excel_file('../data/operations.xlsx')
-    df = df.fillna(0)
-    print(spending_by_category(df, 'Супермаркеты', '2020-05-01 12:00:00'))
+# if __name__ == '__main__':
+#     df = read_excel_file(config.EXCEL_DATA)
+#     df = df.fillna(0)
+#     print(spending_by_category(df, 'Супермаркеты', '2020-05-01 12:00:00'))
 #     print(spending_by_category(df, 'Супермаркеты'))

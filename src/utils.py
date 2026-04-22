@@ -2,12 +2,14 @@ import datetime
 import json
 import os
 import time
+from pathlib import Path
 
 import pandas as pd
 import requests
 from pandas import DataFrame
 from dotenv import load_dotenv
 
+import config
 from src.logging_config import setup_logging
 
 load_dotenv()
@@ -31,19 +33,22 @@ def get_greeting(date_input: str = None) -> str:
         return "Доброй ночи"
 
 
-def read_excel_file(file_path: str) -> DataFrame:
+def read_excel_file(file_path: Path) -> DataFrame:
     """Функция для считывания успешных финансовых операций (статус ОК) из Excel файла."""
     utils_logger.info(f'Начало работы функции "read_excel_file".')
-    if not os.path.exists(file_path):
-        utils_logger.error(f'Файл не найден: {file_path}.')
-        raise FileNotFoundError(f'файл по пути {file_path} не найден.')
 
-    if not (file_path.endswith('.xlsx')):
-        utils_logger.error(f'Неверный формат файла {file_path}.')
+    path = Path(file_path)   # превращаем в объект Path если пришла строка
+
+    if not path.exists():
+        utils_logger.error(f'Файл не найден: {path}.')
+        raise FileNotFoundError(f'файл по пути {path} не найден.')
+
+    if path.suffix != '.xlsx':
+        utils_logger.error(f'Неверный формат файла {path.suffix}.')
         raise ValueError(f'Файл должен иметь формат .xlsx.')
 
     try:
-        df = pd.read_excel(file_path)
+        df = pd.read_excel(path)
         df_from_excel = df[df['Статус'] == 'OK']
         return df_from_excel
     except Exception as e:
@@ -121,9 +126,12 @@ def get_top_trans(data: DataFrame, top: int = 5) -> dict | list[dict]:
     return result_dict
 
 
-# def get_currency_rates(path_to_json: str) -> list[dict]:
+# def get_currency_rates(path_to_json: Path) -> list[dict]:
 #     """Функция для получения курсов валют с сервиса APILayer."""
 #     utils_logger.info(f'Начало работы функции "get_currency_rates".')
+#
+#     path = Path(path_to_json)  # превращаем в объект Path если пришла строка
+#
 #     currency_rates = []
 #     date = datetime.datetime.now()
 #     date_str = date.strftime('%Y-%m-%d')
@@ -169,9 +177,12 @@ def get_top_trans(data: DataFrame, top: int = 5) -> dict | list[dict]:
 #         return currency_rates
 
 
-# def get_stock_prices(path_to_json: str) -> list[dict]:
+# def get_stock_prices(path_to_json: Path) -> list[dict]:
 #     """Функция для получения стоимости акций из S&P500 с сервиса Alpha Vantage."""
 #     utils_logger.info(f'Начало работы функции "get_stock_prices".')
+#
+#     path = Path(path_to_json)  # превращаем в объект Path если пришла строка
+#
 #     with open(path_to_json, 'r', encoding='utf-8') as file:
 #         data = json.load(file)
 #         stocks = data['user_stocks']
@@ -212,7 +223,11 @@ def get_top_trans(data: DataFrame, top: int = 5) -> dict | list[dict]:
 #         return stock_prices
 
 
-def get_currency_rates(path_to_json: str) -> list[dict]:
+def get_currency_rates(path_to_json: Path) -> list[dict]:
+    """Функция для получения курсов валют с сервиса APILayer."""
+    path = Path(path_to_json)  # превращаем в объект Path если пришла строка
+
+
     return [
         {
             "currency": "USD",
@@ -252,7 +267,7 @@ def get_stock_prices(path_to_json: str) -> list[dict]:
 # if __name__ == '__main__':
 # date_input = '2020-05-20 12:00:00'
 # df = read_excel_file('operations.xlsx')
-# df = read_excel_file('../data/operations.xlsx')
+# df = read_excel_file(config.EXCEL_DATA)
 # print(dict(df))
 # print(df.head())
 # df_filtered = filter_by_date(df)
@@ -265,5 +280,5 @@ def get_stock_prices(path_to_json: str) -> list[dict]:
 # print(filter_by_date(df, '2020-05-20 12:00:00'))
 # print(get_top_trans(df_filtered, 2))
 #
-# print(get_currency_rates('../user_settings.json'))
-# print(get_stock_prices('../user_settings.json'))
+# print(get_currency_rates(config.USER_SETT_PATH))
+# print(get_stock_prices(config.USER_SETT_PATH))
